@@ -634,7 +634,7 @@ require('lazy').setup({
         for line in string.gmatch(out.stdout, '[^\r\n]+') do
           table.insert(results, line)
         end
-        -- our picker function: colors
+        -- our picker ffunction: colors
         local colors = function(opts)
           local pickers = require 'telescope.pickers'
           local finders = require 'telescope.finders'
@@ -667,9 +667,35 @@ require('lazy').setup({
             :find()
         end
 
-        -- to execute the function
+        -- to execute the ffunction
         colors()
       end, { desc = '[S]earch [G]rep directory' })
+
+      vim.keymap.set('n', '<leader>gd', function()
+        local out = vim.system({ 'git', 'status', '-s' }):wait()
+        print(vim.inspect(out.stdout))
+        local results = {}
+        for line in string.gmatch(out.stdout, '[^\r\n]+') do
+          table.insert(results, string.sub(line, 4))
+        end
+
+        local pickit = function(opts)
+          local pickers = require 'telescope.pickers'
+          local finders = require 'telescope.finders'
+          local conf = require('telescope.config').values
+          local actions = require 'telescope.actions'
+          local action_state = require 'telescope.actions.state'
+          opts = opts or {}
+          pickers
+            .new(opts, {
+              prompt_title = 'Git diff',
+              finder = finders.new_table { results = results },
+              sorter = conf.generic_sorter(opts),
+            })
+            :find()
+        end
+        pickit()
+      end, { desc = 'git diff files' })
     end,
   },
 

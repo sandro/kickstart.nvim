@@ -10,6 +10,8 @@ return {
   -- { 'tpope/vim-endwise' },
   { 'tpope/vim-unimpaired' },
   { 'tpope/vim-rsi' },
+  { 'sindrets/diffview.nvim' },
+  -- { 'tpope/vim-fugitive' },
   {
     'stevearc/oil.nvim',
     opts = {},
