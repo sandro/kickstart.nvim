@@ -87,11 +87,11 @@ P.S. You can delete this when you're done too. It's your config now! :)
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
+vim.g.mapleader = '\\'
+vim.g.maplocalleader = '\\'
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -114,9 +114,9 @@ vim.o.showmode = false
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.schedule(function()
-  vim.o.clipboard = 'unnamedplus'
-end)
+-- vim.schedule(function()
+--   vim.o.clipboard = 'unnamedplus'
+-- end)
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -166,6 +166,100 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- [[ MY OPTS ]]
+
+vim.opt.grepprg = 'rg --vimgrep'
+vim.opt.grepformat = '%f:%l:%c:%m'
+vim.opt.tabstop = 4
+
+-- visual indent/dedent
+vim.keymap.set('v', '<Tab>', '>gv')
+vim.keymap.set('v', '<S-Tab>', '<gv')
+-- vnoremap <silent> <Tab> >gv
+-- vnoremap <silent> <S-Tab> <gv
+-- Use # to search forward
+vim.keymap.set('n', '#', '*')
+
+vim.keymap.set('n', '<leader>dd', ':DevdocsOpenCurrentFloat<CR>')
+
+-- enable cfilter package
+vim.cmd 'packadd cfilter'
+
+-- vim.keymap.set('n', 'K', function()
+--   print(vim.inspect(require('rgflow.state').get_state().cmd_flags))
+--   require('rgflow').search(vim.fn.expand '<cword>', require('rgflow.settingslib').get_settings().cmd_flags, vim.fn.getcwd())
+-- end, { silent = true })
+-- vim.keymap.set('n', 'K', function()
+--   vim.cmd [[grep! "\b<cword>"<CR>:cwindow<CR>]]
+-- end, { silent = true })
+
+vim.api.nvim_create_autocmd('FocusLost', {
+  callback = function(ev)
+    vim.cmd.stopinsert()
+    vim.cmd.wall { mods = { emsg_silent = true } }
+  end,
+})
+
+-- go fmt
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*.go',
+  callback = function()
+    local params = vim.lsp.util.make_range_params()
+    params.context = { only = { 'source.organizeImports' } }
+    -- buf_request_sync defaults to a 1000ms timeout. Depending on your
+    -- machine and codebase, you may want longer. Add an additional
+    -- argument after params if you find that you have to write the file
+    -- twice for changes to be saved.
+    -- E.g., vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 3000)
+    local result = vim.lsp.buf_request_sync(0, 'textDocument/codeAction', params)
+    for cid, res in pairs(result or {}) do
+      for _, r in pairs(res.result or {}) do
+        if r.edit then
+          local enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or 'utf-16'
+          vim.lsp.util.apply_workspace_edit(r.edit, enc)
+        end
+      end
+    end
+    vim.lsp.buf.format { async = false }
+  end,
+})
+
+vim.keymap.set('n', '<C-\\>', function()
+  local bufnrs = vim.tbl_filter(function(bufnr)
+    if 1 ~= vim.fn.buflisted(bufnr) then
+      return false
+    end
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      return true
+    end
+  end, vim.api.nvim_list_bufs())
+
+  table.sort(bufnrs, function(a, b)
+    return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
+  end)
+
+  local bufnr = bufnrs[3] or bufnrs[1]
+  vim.cmd('buffer ' .. bufnr)
+end, { desc = 'Jump 2nd to last buffer', silent = true })
+
+-- "-------------------------------------------------------------
+-- " clipboard
+-- "-------------------------------------------------------------
+-- " yank selection to system clipboard
+-- vnoremap Y "+y
+vim.keymap.set('v', 'Y', '"+y')
+-- " yank line to system clipboard without trailing newline
+-- nnoremap Y ^"+y$
+vim.keymap.set('n', 'Y', '^"+y$')
+-- " yank line to system clipboard
+-- nnoremap YY "+yy
+vim.keymap.set('n', 'YY', '"+yy')
+-- " paste from system clipboard
+-- nnoremap + "+p
+vim.keymap.set('n', '+', '"+p')
+
+-- END MY CUSTOMIZATIONS
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -174,7 +268,10 @@ vim.o.confirm = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -281,6 +378,54 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      on_attach = function(bufnr)
+        local gitsigns = require 'gitsigns'
+
+        local function map(mode, l, r, opts)
+          opts = opts or {}
+          opts.buffer = bufnr
+          vim.keymap.set(mode, l, r, opts)
+        end
+
+        -- Navigation
+        map('n', ']c', function()
+          if vim.wo.diff then
+            vim.cmd.normal { ']c', bang = true }
+          else
+            gitsigns.nav_hunk 'next'
+          end
+        end)
+
+        map('n', '[c', function()
+          if vim.wo.diff then
+            vim.cmd.normal { '[c', bang = true }
+          else
+            gitsigns.nav_hunk 'prev'
+          end
+        end)
+
+        -- Actions
+        -- map('n', '<leader>hs', gitsigns.stage_hunk)
+        map('n', '<leader>hr', gitsigns.reset_hunk)
+        -- map('v', '<leader>hs', function() gitsigns.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end)
+        map('v', '<leader>hr', function()
+          gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
+        end)
+        -- map('n', '<leader>hS', gitsigns.stage_buffer)
+        -- map('n', '<leader>hu', gitsigns.undo_stage_hunk)
+        -- map('n', '<leader>hR', gitsigns.reset_buffer)
+        -- map('n', '<leader>hp', gitsigns.preview_hunk)
+        -- map('n', '<leader>hb', function() gitsigns.blame_line{full=true} end)
+        map('n', '<leader>tb', gitsigns.toggle_current_line_blame)
+        map('n', '<leader>hd', gitsigns.diffthis)
+        map('n', '<leader>hD', function()
+          gitsigns.diffthis '~'
+        end)
+        -- map('n', '<leader>td', gitsigns.toggle_deleted)
+
+        -- Text object
+        -- map({'o', 'x'}, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
+      end,
     },
   },
 
@@ -435,7 +580,25 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader><leader>', function()
+        builtin.buffers { sort_mru = true }
+      end, { desc = '[ ] Find existing buffers' })
+
+      vim.keymap.set('n', 'K', function()
+        builtin.grep_string {
+          on_complete = {
+            function(picker)
+              local bufnrs = require('telescope.state').get_existing_prompt_bufnrs()
+              local bufnr = picker.prompt_bufnr
+              -- table.remove(picker._completion_callbacks, 1)
+              picker:clear_completion_callbacks()
+              local actions = require 'telescope.actions'
+              actions.send_to_qflist(bufnr)
+              actions.open_qflist(bufnr)
+            end,
+          },
+        }
+      end, { desc = 'Search Word and push to qf' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -459,6 +622,54 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      vim.keymap.set('n', '<leader>sG', function()
+        local out = vim.system({ 'fd', '-H', '--type', 'd', '--color', 'never' }, { text = true }):wait()
+        -- local out = vim.system({ 'rg', '--files', '--hidden', '--color', 'never' }, { text = true }):wait()
+
+        -- vim.print(vim.inspect(out.stdout))
+        local results = {}
+
+        -- Use string.gmatch to iterate over each line
+        for line in string.gmatch(out.stdout, '[^\r\n]+') do
+          table.insert(results, line)
+        end
+        -- our picker function: colors
+        local colors = function(opts)
+          local pickers = require 'telescope.pickers'
+          local finders = require 'telescope.finders'
+          local conf = require('telescope.config').values
+          local actions = require 'telescope.actions'
+          local action_state = require 'telescope.actions.state'
+          opts = opts or {}
+          pickers
+            .new(opts, {
+              prompt_title = 'Grep in dir',
+              finder = finders.new_table {
+                results = { 'red', 'green', 'blue' },
+                results = results,
+              },
+              sorter = conf.generic_sorter(opts),
+              attach_mappings = function(prompt_bufnr, map)
+                actions.select_default:replace(function()
+                  actions.close(prompt_bufnr)
+                  local selection = action_state.get_selected_entry()
+                  -- print(vim.inspect(selection))
+                  -- vim.api.nvim_put({ selection[1] }, '', false, true)
+                  builtin.live_grep {
+                    search_dirs = { selection[1] },
+                    prompt_title = 'Live Grep in ' .. selection[1],
+                  }
+                end)
+                return true
+              end,
+            })
+            :find()
+        end
+
+        -- to execute the function
+        colors()
+      end, { desc = '[S]earch [G]rep directory' })
     end,
   },
 
@@ -672,7 +883,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -681,8 +892,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+        ts_ls = {},
 
         lua_ls = {
           -- cmd = { ... },
@@ -772,7 +982,7 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -850,7 +1060,7 @@ require('lazy').setup({
       completion = {
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        documentation = { auto_show = true, auto_show_delay_ms = 500 },
       },
 
       sources = {
@@ -974,9 +1184,9 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
@@ -984,7 +1194,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
