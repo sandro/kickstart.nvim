@@ -258,7 +258,16 @@ vim.keymap.set('n', 'YY', '"+yy')
 -- nnoremap + "+p
 vim.keymap.set('n', '+', '"+p')
 
--- END MY CUSTOMIZATIONS
+vim.api.nvim_create_user_command('Rg', function(arg)
+  vim.cmd { cmd = 'grep', args = arg.fargs, bang = arg.bang, mods = { silent = not arg.bang } }
+  vim.cmd 'copen'
+end, { bang = true, nargs = '*' })
+
+vim.keymap.set('n', 'K', function()
+  vim.cmd { cmd = 'Rg', args = { vim.fn.expand '<cword>' } }
+end, { desc = 'Search Word and push to qf' })
+
+-- [[ END MY OPTS ]]
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -584,22 +593,6 @@ require('lazy').setup({
         builtin.buffers { sort_mru = true }
       end, { desc = '[ ] Find existing buffers' })
       vim.keymap.set('n', '<leader>gd', builtin.git_status, { desc = 'git status' })
-
-      vim.keymap.set('n', 'K', function()
-        builtin.grep_string {
-          on_complete = {
-            function(picker)
-              local bufnrs = require('telescope.state').get_existing_prompt_bufnrs()
-              local bufnr = picker.prompt_bufnr
-              -- table.remove(picker._completion_callbacks, 1)
-              picker:clear_completion_callbacks()
-              local actions = require 'telescope.actions'
-              actions.send_to_qflist(bufnr)
-              actions.open_qflist(bufnr)
-            end,
-          },
-        }
-      end, { desc = 'Search Word and push to qf' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
