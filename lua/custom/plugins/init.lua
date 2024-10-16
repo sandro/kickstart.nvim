@@ -27,13 +27,13 @@ return {
       vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
     end,
   },
-  {
-    'ray-x/starry.nvim',
-    config = function()
-      require('starry').setup()
-      require('starry.functions').change_style 'palenight'
-    end,
-  },
+  -- {
+  --   'ray-x/starry.nvim',
+  --   config = function()
+  --     require('starry').setup()
+  --     -- require('starry.functions').change_style 'palenight'
+  --   end,
+  -- },
   {
     'luckasRanarison/nvim-devdocs',
     dependencies = {

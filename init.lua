@@ -168,9 +168,10 @@ vim.o.confirm = true
 
 -- [[ MY OPTS ]]
 
-vim.opt.grepprg = 'rg --vimgrep'
+vim.opt.grepprg = 'rg --vimgrep --glob !seed_data/'
 vim.opt.grepformat = '%f:%l:%c:%m'
 vim.opt.tabstop = 4
+vim.opt.background = 'dark'
 
 -- visual indent/dedent
 vim.keymap.set('v', '<Tab>', '>gv')
@@ -567,6 +568,21 @@ require('lazy').setup({
         --   },
         -- },
         -- pickers = {}
+        defaults = {
+          vimgrep_arguments = {
+            'rg',
+            '--color=never',
+            '--no-heading',
+            '--with-filename',
+            '--line-number',
+            '--column',
+            '--smart-case',
+            '--glob',
+            '!seed_data',
+          },
+          layout_strategy = 'vertical',
+          layout_config = { height = 0.95 },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -643,7 +659,7 @@ require('lazy').setup({
                 results = { 'red', 'green', 'blue' },
                 results = results,
               },
-              sorter = conf.generic_sorter(opts),
+              sorter = conf.file_sorter(opts),
               attach_mappings = function(prompt_bufnr, map)
                 actions.select_default:replace(function()
                   actions.close(prompt_bufnr)
@@ -1003,6 +1019,8 @@ require('lazy').setup({
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -1124,7 +1142,11 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'tokyonight-moon'
+
+      -- You can configure highlights by doing something like:
+      vim.cmd.hi 'Comment gui=none'
     end,
   },
 
@@ -1174,7 +1196,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'sql', 'go' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
