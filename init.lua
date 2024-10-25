@@ -224,6 +224,7 @@ vim.keymap.set('n', '<C-\\>', function()
     if vim.api.nvim_buf_is_loaded(bufnr) then
       return true
     end
+    return false
   end, vim.api.nvim_list_bufs())
 
   table.sort(bufnrs, function(a, b)
@@ -258,6 +259,9 @@ end, { bang = true, nargs = '*' })
 vim.keymap.set('n', 'K', function()
   vim.cmd { cmd = 'Rg', args = { vim.fn.expand '<cword>' } }
 end, { desc = 'Search Word and push to qf' })
+
+-- in RSI
+-- vim.keymap.set('i', '<C-E>', '<End>')
 
 -- [[ END MY OPTS ]]
 
@@ -608,6 +612,7 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
 
       vim.keymap.set('n', '<leader>sG', function()
+        local path = vim.fn.expand '%:h'
         local out = vim.system({ 'fd', '-H', '--type', 'd', '--color', 'never' }, { text = true }):wait()
         -- local out = vim.system({ 'rg', '--files', '--hidden', '--color', 'never' }, { text = true }):wait()
 
@@ -630,11 +635,16 @@ require('lazy').setup({
             .new(opts, {
               prompt_title = 'Grep in dir',
               finder = finders.new_table {
-                results = { 'red', 'green', 'blue' },
                 results = results,
               },
               sorter = conf.file_sorter(opts),
+              default_text = path,
               attach_mappings = function(prompt_bufnr, map)
+                map('i', '<c-space>', function(prompt_bufnr)
+                  local current_picker = action_state.get_current_picker(prompt_bufnr)
+                  current_picker:reset_prompt ''
+                  -- current_picker:set_prompt(path, false)
+                end)
                 actions.select_default:replace(function()
                   actions.close(prompt_bufnr)
                   local selection = action_state.get_selected_entry()
@@ -1011,6 +1021,8 @@ require('lazy').setup({
       local luasnip = require 'luasnip'
       luasnip.config.setup {}
 
+      -- local my_preset = cmp.mapping.preset
+
       cmp.setup {
         snippet = {
           expand = function(args)
@@ -1048,6 +1060,13 @@ require('lazy').setup({
           --  Generally you don't need this, because nvim-cmp will display
           --  completions whenever it has completion options available.
           ['<C-Space>'] = cmp.mapping.complete {},
+
+          ['<C-e>'] = {
+            i = function()
+              cmp.mapping.abort()
+              vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<End>', true, false, true), 'n', false)
+            end,
+          },
 
           -- Think of <c-l> as moving to the right of your snippet expansion.
           --  So if you have a snippet that's like:
