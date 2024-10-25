@@ -233,6 +233,7 @@ vim.keymap.set('n', '<C-\\>', function()
     if vim.api.nvim_buf_is_loaded(bufnr) then
       return true
     end
+    return false
   end, vim.api.nvim_list_bufs())
 
   table.sort(bufnrs, function(a, b)
@@ -267,6 +268,9 @@ end, { bang = true, nargs = '*' })
 vim.keymap.set('n', 'K', function()
   vim.cmd { cmd = 'Rg', args = { vim.fn.expand '<cword>' } }
 end, { desc = 'Search Word and push to qf' })
+
+-- in RSI
+-- vim.keymap.set('i', '<C-E>', '<End>')
 
 -- [[ END MY OPTS ]]
 
@@ -634,6 +638,7 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
 
       vim.keymap.set('n', '<leader>sG', function()
+        local path = vim.fn.expand '%:h'
         local out = vim.system({ 'fd', '-H', '--type', 'd', '--color', 'never' }, { text = true }):wait()
         -- local out = vim.system({ 'rg', '--files', '--hidden', '--color', 'never' }, { text = true }):wait()
 
@@ -656,11 +661,16 @@ require('lazy').setup({
             .new(opts, {
               prompt_title = 'Grep in dir',
               finder = finders.new_table {
-                results = { 'red', 'green', 'blue' },
                 results = results,
               },
               sorter = conf.file_sorter(opts),
+              default_text = path,
               attach_mappings = function(prompt_bufnr, map)
+                map('i', '<c-space>', function(prompt_bufnr)
+                  local current_picker = action_state.get_current_picker(prompt_bufnr)
+                  current_picker:reset_prompt ''
+                  -- current_picker:set_prompt(path, false)
+                end)
                 actions.select_default:replace(function()
                   actions.close(prompt_bufnr)
                   local selection = action_state.get_selected_entry()
@@ -1083,7 +1093,7 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        preset = 'enter',
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
