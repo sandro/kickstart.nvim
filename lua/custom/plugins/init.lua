@@ -34,15 +34,15 @@ return {
   --     -- require('starry.functions').change_style 'palenight'
   --   end,
   -- },
-  {
-    'luckasRanarison/nvim-devdocs',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-telescope/telescope.nvim',
-      'nvim-treesitter/nvim-treesitter',
-    },
-    opts = {},
-  },
+  -- {
+  --   'luckasRanarison/nvim-devdocs',
+  --   dependencies = {
+  --     'nvim-lua/plenary.nvim',
+  --     'nvim-telescope/telescope.nvim',
+  --     'nvim-treesitter/nvim-treesitter',
+  --   },
+  --   opts = {},
+  -- },
   {
     'gbprod/yanky.nvim',
     opts = {
@@ -58,6 +58,12 @@ return {
 
       vim.keymap.set('n', '<c-p>', '<Plug>(YankyPreviousEntry)')
       vim.keymap.set('n', '<c-n>', '<Plug>(YankyNextEntry)')
+    end,
+  },
+  {
+    'nvim-telescope/telescope-frecency.nvim',
+    config = function()
+      require('telescope').load_extension 'frecency'
     end,
   },
   -- {
