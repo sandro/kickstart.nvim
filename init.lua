@@ -181,7 +181,7 @@ vim.keymap.set('v', '<S-Tab>', '<gv')
 -- Use # to search forward
 vim.keymap.set('n', '#', '*')
 
-vim.keymap.set('n', '<leader>dd', ':DevdocsOpenCurrentFloat<CR>')
+-- vim.keymap.set('n', '<leader>dd', ':DevdocsOpenCurrentFloat<CR>')
 
 -- enable cfilter package
 vim.cmd 'packadd cfilter'
@@ -392,6 +392,7 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      current_line_blame = true,
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
 
@@ -408,7 +409,7 @@ require('lazy').setup({
           else
             gitsigns.nav_hunk 'next'
           end
-        end)
+        end, { desc = 'next hunk' })
 
         map('n', '[c', function()
           if vim.wo.diff then
@@ -416,7 +417,7 @@ require('lazy').setup({
           else
             gitsigns.nav_hunk 'prev'
           end
-        end)
+        end, { desc = 'prev hunk' })
 
         -- Actions
         -- map('n', '<leader>hs', gitsigns.stage_hunk)
@@ -424,17 +425,18 @@ require('lazy').setup({
         -- map('v', '<leader>hs', function() gitsigns.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end)
         map('v', '<leader>hr', function()
           gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end)
+        end, { desc = 'Reset hunk' })
         -- map('n', '<leader>hS', gitsigns.stage_buffer)
         -- map('n', '<leader>hu', gitsigns.undo_stage_hunk)
         -- map('n', '<leader>hR', gitsigns.reset_buffer)
-        -- map('n', '<leader>hp', gitsigns.preview_hunk)
+        map('n', '<leader>hp', gitsigns.preview_hunk_inline, { desc = 'Preview inline hunk' })
+        map('n', '<leader>hw', gitsigns.toggle_word_diff, { desc = 'Toggle word diff' })
         -- map('n', '<leader>hb', function() gitsigns.blame_line{full=true} end)
-        map('n', '<leader>tb', gitsigns.toggle_current_line_blame)
-        map('n', '<leader>hd', gitsigns.diffthis)
+        map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = 'toggle blame' })
+        map('n', '<leader>hd', gitsigns.diffthis, { desc = 'diff this' })
         map('n', '<leader>hD', function()
           gitsigns.diffthis '~'
-        end)
+        end, { desc = 'diff this ~' })
         -- map('n', '<leader>td', gitsigns.toggle_deleted)
 
         -- Text object
@@ -612,7 +614,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader><leader>', function()
         builtin.buffers { sort_mru = true }
       end, { desc = '[ ] Find existing buffers' })
-      vim.keymap.set('n', '<leader>gd', builtin.git_status, { desc = 'git status' })
+      vim.keymap.set('n', '<leader>gd', builtin.git_status, { desc = 'Git status' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -638,7 +640,7 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
 
       vim.keymap.set('n', '<leader>sG', function()
-        local path = vim.fn.expand '%:h'
+        local path = vim.fn.expand '%:.:h'
         local out = vim.system({ 'fd', '-H', '--type', 'd', '--color', 'never' }, { text = true }):wait()
         -- local out = vim.system({ 'rg', '--files', '--hidden', '--color', 'never' }, { text = true }):wait()
 
