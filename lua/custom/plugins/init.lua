@@ -11,6 +11,9 @@ return {
   { 'tpope/vim-unimpaired' },
   { 'tpope/vim-rsi' },
   { 'sindrets/diffview.nvim' },
+  { 'rebelot/kanagawa.nvim' },
+  { 'EdenEast/nightfox.nvim' },
+  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
   -- { 'tpope/vim-fugitive' },
   {
     'stevearc/oil.nvim',
@@ -27,22 +30,6 @@ return {
       vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
     end,
   },
-  -- {
-  --   'ray-x/starry.nvim',
-  --   config = function()
-  --     require('starry').setup()
-  --     -- require('starry.functions').change_style 'palenight'
-  --   end,
-  -- },
-  -- {
-  --   'luckasRanarison/nvim-devdocs',
-  --   dependencies = {
-  --     'nvim-lua/plenary.nvim',
-  --     'nvim-telescope/telescope.nvim',
-  --     'nvim-treesitter/nvim-treesitter',
-  --   },
-  --   opts = {},
-  -- },
   {
     'gbprod/yanky.nvim',
     opts = {
@@ -66,6 +53,32 @@ return {
       require('telescope').load_extension 'frecency'
     end,
   },
+  {
+    'kwkarlwang/bufjump.nvim',
+    config = function()
+      require('bufjump').setup {
+        forward_key = ']b',
+        backward_key = '[b',
+      }
+    end,
+  },
+  -- { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+  -- {
+  --   'ray-x/starry.nvim',
+  --   config = function()
+  --     require('starry').setup()
+  --     -- require('starry.functions').change_style 'palenight'
+  --   end,
+  -- },
+  -- {
+  --   'luckasRanarison/nvim-devdocs',
+  --   dependencies = {
+  --     'nvim-lua/plenary.nvim',
+  --     'nvim-telescope/telescope.nvim',
+  --     'nvim-treesitter/nvim-treesitter',
+  --   },
+  --   opts = {},
+  -- },
   -- {
   --   'mangelozzi/nvim-rgflow.lua',
   --   config = function()
