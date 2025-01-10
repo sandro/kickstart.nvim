@@ -603,6 +603,19 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+      local pickers = require 'telescope.pickers'
+      local finders = require 'telescope.finders'
+      local conf = require('telescope.config').values
+      local actions = require 'telescope.actions'
+      local action_state = require 'telescope.actions.state'
+      local previewers = require 'telescope.previewers'
+      -- print(vim.inspect(conf.file_sorter))
+      -- local old_score_fn = conf.file_sorter.scoring_function
+      -- conf.file_sorter.scoring_function = function(self, prompt, line)
+      --   print('score', prompt, line)
+      --   -- return old_score_fn(self, prompt, line)
+      --   return -1
+      -- end
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
@@ -654,11 +667,6 @@ require('lazy').setup({
         end
         -- our picker ffunction: colors
         local colors = function(opts)
-          local pickers = require 'telescope.pickers'
-          local finders = require 'telescope.finders'
-          local conf = require('telescope.config').values
-          local actions = require 'telescope.actions'
-          local action_state = require 'telescope.actions.state'
           opts = opts or {}
           pickers
             .new(opts, {
@@ -693,6 +701,34 @@ require('lazy').setup({
         -- to execute the ffunction
         colors()
       end, { desc = '[S]earch [G]rep directory' })
+
+      local utils = require 'telescope.utils'
+      vim.keymap.set('n', '<leader>dd', function()
+        local opts = {
+          entry_maker = function(entry)
+            return {
+              value = entry,
+              display = entry,
+              ordinal = entry,
+            }
+          end,
+        }
+        opts.cwd = opts.cwd and utils.path_expand(opts.cwd) or vim.loop.cwd()
+
+        local live_grepper = finders.new_job(function(prompt)
+          local term = prompt == '' and '.' or prompt
+          local git_cmd = utils.__git_command { 'diff-index', '-U0', '--name-only', '-G', term, 'HEAD' }
+          return git_cmd
+        end, opts.entry_maker, opts.max_results, opts.cwd)
+
+        pickers
+          .new(opts, {
+            prompt_title = 'grep git diff',
+            finder = live_grepper,
+            previewer = previewers.git_file_diff.new(opts),
+          })
+          :find()
+      end, { desc = 'grep git diff' })
 
       -- vim.keymap.set('n', '<leader>gd', function()
       --   local out = vim.system({ 'git', 'status', '-s' }):wait()
