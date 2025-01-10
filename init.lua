@@ -265,9 +265,9 @@ vim.api.nvim_create_user_command('Rg', function(arg)
   vim.cmd 'copen'
 end, { bang = true, nargs = '*' })
 
-vim.keymap.set('n', 'K', function()
-  vim.cmd { cmd = 'Rg', args = { vim.fn.expand '<cword>' } }
-end, { desc = 'Search Word and push to qf' })
+-- vim.keymap.set('n', 'K', function()
+--   vim.cmd { cmd = 'Rg', args = { vim.fn.expand '<cword>' } }
+-- end, { desc = 'Search Word and push to qf' })
 
 -- in RSI
 -- vim.keymap.set('i', '<C-E>', '<End>')
