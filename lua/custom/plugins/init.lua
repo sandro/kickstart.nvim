@@ -56,6 +56,7 @@ return {
   {
     'kwkarlwang/bufjump.nvim',
     config = function()
+      vim.opt.jumpoptions = 'stack'
       require('bufjump').setup {
         forward_key = ']b',
         backward_key = '[b',
