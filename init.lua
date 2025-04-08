@@ -422,7 +422,7 @@ require('lazy').setup({
 
         -- Actions
         -- map('n', '<leader>hs', gitsigns.stage_hunk)
-        map('n', '<leader>hr', gitsigns.reset_hunk)
+        map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'Reset hunk' })
         -- map('v', '<leader>hs', function() gitsigns.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end)
         map('v', '<leader>hr', function()
           gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
@@ -431,9 +431,10 @@ require('lazy').setup({
         -- map('n', '<leader>hu', gitsigns.undo_stage_hunk)
         -- map('n', '<leader>hR', gitsigns.reset_buffer)
         map('n', '<leader>hp', gitsigns.preview_hunk_inline, { desc = 'Preview inline hunk' })
-        map('n', '<leader>hw', gitsigns.toggle_word_diff, { desc = 'Toggle word diff' })
+        map('n', '<leader>htw', gitsigns.toggle_word_diff, { desc = 'Toggle word diff' })
+        map('n', '<leader>htd', gitsigns.toggle_deleted, { desc = 'Toggle deleted' })
         -- map('n', '<leader>hb', function() gitsigns.blame_line{full=true} end)
-        map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = 'toggle blame' })
+        map('n', '<leader>htb', gitsigns.toggle_current_line_blame, { desc = 'toggle blame' })
         map('n', '<leader>hd', gitsigns.diffthis, { desc = 'diff this' })
         map('n', '<leader>hD', function()
           gitsigns.diffthis '~'
@@ -1197,6 +1198,8 @@ require('lazy').setup({
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
+      vim.cmd.hi 'DiagnosticUnnecessary guifg=#ffffff guibg=#333333'
+      -- vim.api.nvim_set_hl(0, 'DiagnosticUnnecessary', { fg = '#ffffff', bg = '#f73333' })
     end,
   },
 
