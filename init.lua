@@ -225,24 +225,37 @@ vim.api.nvim_create_autocmd('BufWritePre', {
   end,
 })
 
-vim.keymap.set('n', '<C-\\>', function()
-  local bufnrs = vim.tbl_filter(function(bufnr)
-    if 1 ~= vim.fn.buflisted(bufnr) then
-      return false
-    end
-    if vim.api.nvim_buf_is_loaded(bufnr) then
-      return true
-    end
-    return false
-  end, vim.api.nvim_list_bufs())
+-- ts
+-- vim.api.nvim_create_autocmd('BufWritePre', {
+--   pattern = { '*.ts', '*.tsx' },
+--   callback = function()
+--     local params = {
+--       command = '_typescript.organizeImports',
+--       arguments = { vim.api.nvim_buf_get_name(0) },
+--       title = '',
+--     }
+--     vim.lsp.buf.execute_command(params)
+--   end,
+-- })
 
-  table.sort(bufnrs, function(a, b)
-    return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
-  end)
-
-  local bufnr = bufnrs[3] or bufnrs[1]
-  vim.cmd('buffer ' .. bufnr)
-end, { desc = 'Jump 2nd to last buffer', silent = true })
+-- vim.keymap.set('n', '<C-\\>', function()
+--   local bufnrs = vim.tbl_filter(function(bufnr)
+--     if 1 ~= vim.fn.buflisted(bufnr) then
+--       return false
+--     end
+--     if vim.api.nvim_buf_is_loaded(bufnr) then
+--       return true
+--     end
+--     return false
+--   end, vim.api.nvim_list_bufs())
+--
+--   table.sort(bufnrs, function(a, b)
+--     return vim.fn.getbufinfo(a)[1].lastused > vim.fn.getbufinfo(b)[1].lastused
+--   end)
+--
+--   local bufnr = bufnrs[3] or bufnrs[1]
+--   vim.cmd('buffer ' .. bufnr)
+-- end, { desc = 'Jump 2nd to last buffer', silent = true })
 
 -- "-------------------------------------------------------------
 -- " clipboard
@@ -282,10 +295,8 @@ end, { bang = true, nargs = '*' })
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -392,58 +403,6 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
-      current_line_blame = true,
-      linehl = true,
-      on_attach = function(bufnr)
-        local gitsigns = require 'gitsigns'
-
-        local function map(mode, l, r, opts)
-          opts = opts or {}
-          opts.buffer = bufnr
-          vim.keymap.set(mode, l, r, opts)
-        end
-
-        -- Navigation
-        map('n', ']c', function()
-          if vim.wo.diff then
-            vim.cmd.normal { ']c', bang = true }
-          else
-            gitsigns.nav_hunk 'next'
-          end
-        end, { desc = 'next hunk' })
-
-        map('n', '[c', function()
-          if vim.wo.diff then
-            vim.cmd.normal { '[c', bang = true }
-          else
-            gitsigns.nav_hunk 'prev'
-          end
-        end, { desc = 'prev hunk' })
-
-        -- Actions
-        -- map('n', '<leader>hs', gitsigns.stage_hunk)
-        map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'Reset hunk' })
-        -- map('v', '<leader>hs', function() gitsigns.stage_hunk {vim.fn.line('.'), vim.fn.line('v')} end)
-        map('v', '<leader>hr', function()
-          gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'Reset hunk' })
-        -- map('n', '<leader>hS', gitsigns.stage_buffer)
-        -- map('n', '<leader>hu', gitsigns.undo_stage_hunk)
-        -- map('n', '<leader>hR', gitsigns.reset_buffer)
-        map('n', '<leader>hp', gitsigns.preview_hunk_inline, { desc = 'Preview inline hunk' })
-        map('n', '<leader>htw', gitsigns.toggle_word_diff, { desc = 'Toggle word diff' })
-        map('n', '<leader>htd', gitsigns.toggle_deleted, { desc = 'Toggle deleted' })
-        -- map('n', '<leader>hb', function() gitsigns.blame_line{full=true} end)
-        map('n', '<leader>htb', gitsigns.toggle_current_line_blame, { desc = 'toggle blame' })
-        map('n', '<leader>hd', gitsigns.diffthis, { desc = 'diff this' })
-        map('n', '<leader>hD', function()
-          gitsigns.diffthis '~'
-        end, { desc = 'diff this ~' })
-        -- map('n', '<leader>td', gitsigns.toggle_deleted)
-
-        -- Text object
-        -- map({'o', 'x'}, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
-      end,
     },
   },
 
@@ -590,6 +549,7 @@ require('lazy').setup({
           },
           layout_strategy = 'vertical',
           layout_config = { height = 0.95 },
+          path_display = { 'filename_first' },
         },
         extensions = {
           ['ui-select'] = {
@@ -628,7 +588,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', function()
         builtin.buffers { sort_mru = true }
-      end, { desc = '[ ] Find existing buffers' })
+      end, { desc = '[\\] Find existing buffers' })
       vim.keymap.set('n', '<leader>gd', builtin.git_status, { desc = 'Git status' })
 
       -- Slightly advanced example of overriding default behavior and theme
@@ -729,8 +689,35 @@ require('lazy').setup({
             previewer = previewers.git_file_diff.new(opts),
           })
           :find()
-      end, { desc = 'grep git diff' })
+      end, { desc = 'Grep git diff' })
 
+      vim.keymap.set('n', '<leader>dr', function()
+        local opts = {
+          entry_maker = function(entry)
+            return {
+              value = entry,
+              display = entry,
+              ordinal = entry,
+            }
+          end,
+        }
+        opts.cwd = opts.cwd and utils.path_expand(opts.cwd) or vim.loop.cwd()
+
+        local live_grepper = finders.new_job(function(prompt)
+          local term = prompt == '' and '.' or prompt
+          -- git diff-tree --no-commit-id --name-only -r HEAD
+          local git_cmd = utils.__git_command { 'diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD', term }
+          return git_cmd
+        end, opts.entry_maker, opts.max_results, opts.cwd)
+
+        pickers
+          .new(opts, {
+            prompt_title = 'git last commit',
+            finder = live_grepper,
+            previewer = previewers.git_file_diff.new(opts),
+          })
+          :find()
+      end, { desc = 'git last commit' })
       -- vim.keymap.set('n', '<leader>gd', function()
       --   local out = vim.system({ 'git', 'status', '-s' }):wait()
       --   print(vim.inspect(out.stdout))
@@ -978,7 +965,15 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        ts_ls = {},
+        ts_ls = {
+          settings = {
+            typescript = {
+              preferences = {
+                importModuleSpecifier = 'relative',
+              },
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -1283,7 +1278,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
