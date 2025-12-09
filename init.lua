@@ -168,10 +168,10 @@ vim.o.confirm = true
 
 -- [[ MY OPTS ]]
 
-vim.opt.grepprg = 'rg --vimgrep --glob !seed_data/'
-vim.opt.grepformat = '%f:%l:%c:%m'
-vim.opt.tabstop = 4
-vim.opt.background = 'dark'
+vim.o.grepprg = 'rg --vimgrep --glob !seed_data/'
+vim.o.grepformat = '%f:%l:%c:%m'
+vim.o.tabstop = 4
+vim.o.background = 'dark'
 
 -- visual indent/dedent
 vim.keymap.set('v', '<Tab>', '>gv')
