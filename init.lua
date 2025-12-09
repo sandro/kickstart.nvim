@@ -692,32 +692,100 @@ require('lazy').setup({
       end, { desc = 'Grep git diff' })
 
       vim.keymap.set('n', '<leader>dr', function()
+        -- Get git root directory
+        local git_root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
+
         local opts = {
+          cwd = git_root, -- Set cwd to git root
           entry_maker = function(entry)
             return {
               value = entry,
               display = entry,
               ordinal = entry,
+              path = git_root .. '/' .. entry, -- Full path from git root
             }
           end,
         }
-        opts.cwd = opts.cwd and utils.path_expand(opts.cwd) or vim.loop.cwd()
 
         local live_grepper = finders.new_job(function(prompt)
           local term = prompt == '' and '.' or prompt
-          -- git diff-tree --no-commit-id --name-only -r HEAD
           local git_cmd = utils.__git_command { 'diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD', term }
           return git_cmd
-        end, opts.entry_maker, opts.max_results, opts.cwd)
+        end, opts.entry_maker, opts.max_results, git_root)
 
         pickers
           .new(opts, {
             prompt_title = 'git last commit',
             finder = live_grepper,
-            previewer = previewers.git_file_diff.new(opts),
+            previewer = previewers.new_buffer_previewer {
+              title = 'Git Diff',
+              define_preview = function(self, entry)
+                -- Show diff for this file in the last commit
+                local cmd = { 'git', 'diff', 'HEAD~1', 'HEAD', '--', entry.value }
+                vim.fn.jobstart(cmd, {
+                  cwd = git_root,
+                  stdout_buffered = true,
+                  on_stdout = function(_, data)
+                    if data then
+                      vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+                      vim.api.nvim_set_option_value('filetype', 'diff', { buf = self.state.bufnr })
+                    end
+                  end,
+                })
+              end,
+            },
+            sorter = conf.generic_sorter(opts),
           })
           :find()
       end, { desc = 'git last commit' })
+
+      vim.keymap.set('n', '<leader>do', function()
+        -- Get git root directory
+        local git_root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
+
+        local opts = {
+          cwd = git_root, -- Set cwd to git root
+          entry_maker = function(entry)
+            return {
+              value = entry,
+              display = entry,
+              ordinal = entry,
+              path = git_root .. '/' .. entry, -- Full path from git root
+            }
+          end,
+        }
+
+        local live_grepper = finders.new_job(function(prompt)
+          local term = prompt == '' and '.' or prompt
+          local git_cmd = utils.__git_command { 'diff', '--name-only', 'main...HEAD', '--', term }
+          return git_cmd
+        end, opts.entry_maker, opts.max_results, git_root)
+
+        pickers
+          .new(opts, {
+            prompt_title = 'git diff main',
+            finder = live_grepper,
+            previewer = previewers.new_buffer_previewer {
+              title = 'Git Diff',
+              define_preview = function(self, entry)
+                -- Run git diff on the selected file
+                local cmd = { 'git', 'diff', 'main...HEAD', '--', entry.value }
+                vim.fn.jobstart(cmd, {
+                  cwd = git_root,
+                  stdout_buffered = true,
+                  on_stdout = function(_, data)
+                    if data then
+                      vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+                      vim.api.nvim_set_option_value('filetype', 'diff', { buf = self.state.bufnr })
+                    end
+                  end,
+                })
+              end,
+            },
+            sorter = conf.generic_sorter(opts),
+          })
+          :find()
+      end, { desc = 'diff against main' })
       -- vim.keymap.set('n', '<leader>gd', function()
       --   local out = vim.system({ 'git', 'status', '-s' }):wait()
       --   print(vim.inspect(out.stdout))
