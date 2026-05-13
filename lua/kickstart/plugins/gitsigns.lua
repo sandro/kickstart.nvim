@@ -50,6 +50,7 @@ require('gitsigns').setup {
     -- Toggles
     map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
     map('n', '<leader>tw', gitsigns.toggle_word_diff, { desc = '[T]oggle git intra-line [w]ord diff' })
+    map('n', '<leader>htD', gitsigns.toggle_deleted, { desc = '[T]oggle git show [D]eleted' })
 
     -- Text object
     map({ 'o', 'x' }, 'ih', gitsigns.select_hunk)

@@ -95,11 +95,11 @@ do
   -- Set <space> as the leader key
   -- See `:help mapleader`
   --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-  vim.g.mapleader = ' '
-  vim.g.maplocalleader = ' '
+  vim.g.mapleader = '\\'
+  vim.g.maplocalleader = '\\'
 
   -- Set to true if you have a Nerd Font installed and selected in the terminal
-  vim.g.have_nerd_font = false
+  vim.g.have_nerd_font = true
 
   -- [[ Setting options ]]
   --  See `:help vim.o`
@@ -171,6 +171,9 @@ do
   -- instead raise a dialog asking if you wish to save the current file(s)
   -- See `:help 'confirm'`
   vim.o.confirm = true
+
+  -- Load custom options
+  require('custom.options')
 
   -- [[ Basic Keymaps ]]
   --  See `:help vim.keymap.set()`
@@ -502,6 +505,9 @@ do
   -- Enable Telescope extensions if they are installed
   pcall(require('telescope').load_extension, 'fzf')
   pcall(require('telescope').load_extension, 'ui-select')
+
+  -- Load custom telescope keymaps
+  require('custom.telescope-keymaps').setup()
 
   -- See `:help telescope.builtin`
   local builtin = require 'telescope.builtin'
@@ -965,7 +971,7 @@ do
   -- require 'kickstart.plugins.lint'
   -- require 'kickstart.plugins.autopairs'
   -- require 'kickstart.plugins.neo-tree'
-  -- require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
+  require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
 
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --
