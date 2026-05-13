@@ -724,6 +724,31 @@ do
       if client and client:supports_method('textDocument/inlayHint', event.buf) then
         map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
       end
+
+      -- Enable semantic tokens for better syntax highlighting (Neovim 0.12+)
+      -- Uses LSP semantic information instead of just treesitter
+      if client and client:supports_method('textDocument/semanticTokens', event.buf) then
+        vim.lsp.semantic_tokens.start(event.buf, client.id)
+      end
+
+      -- Enable code lens - shows actionable metadata above functions
+      -- (e.g., "5 references", "Run test", "Debug")
+      if client and client:supports_method('textDocument/codeLens', event.buf) then
+        vim.lsp.codelens.refresh { bufnr = event.buf }
+
+        -- Auto-refresh code lens on cursor hold and buffer events
+        local codelens_augroup = vim.api.nvim_create_augroup('kickstart-lsp-codelens', { clear = false })
+        vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
+          buffer = event.buf,
+          group = codelens_augroup,
+          callback = function()
+            vim.lsp.codelens.refresh { bufnr = event.buf }
+          end,
+        })
+
+        -- Keymap to run code lens action
+        map('grl', vim.lsp.codelens.run, '[R]un Code [L]ens')
+      end
     end,
   })
 
