@@ -3,6 +3,11 @@
 
 local M = {}
 
+-- Helper function for GitHub URLs
+local function gh(repo)
+  return 'https://github.com/' .. repo
+end
+
 function M.setup()
   -- Simple plugins (no configuration needed)
   vim.pack.add { gh 'tpope/vim-speeddating' }

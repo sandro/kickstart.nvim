@@ -188,11 +188,28 @@ do
     update_in_insert = false,
     severity_sort = true,
     float = { border = 'rounded', source = 'if_many' },
-    underline = { severity = { min = vim.diagnostic.severity.WARN } },
-
-    -- Can switch between these as you prefer
-    virtual_text = true, -- Text shows up at the end of the line
-    virtual_lines = false, -- Text shows up underneath the line, with virtual lines
+    underline = { severity = vim.diagnostic.severity.ERROR },
+    signs = vim.g.have_nerd_font and {
+      text = {
+        [vim.diagnostic.severity.ERROR] = '󰅚 ',
+        [vim.diagnostic.severity.WARN] = '󰀪 ',
+        [vim.diagnostic.severity.INFO] = '󰋽 ',
+        [vim.diagnostic.severity.HINT] = '󰌶 ',
+      },
+    } or {},
+    virtual_text = {
+      source = 'if_many',
+      spacing = 2,
+      format = function(diagnostic)
+        local diagnostic_message = {
+          [vim.diagnostic.severity.ERROR] = diagnostic.message,
+          [vim.diagnostic.severity.WARN] = diagnostic.message,
+          [vim.diagnostic.severity.INFO] = diagnostic.message,
+          [vim.diagnostic.severity.HINT] = diagnostic.message,
+        }
+        return diagnostic_message[diagnostic.severity]
+      end,
+    },
 
     -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
     jump = {
@@ -206,6 +223,7 @@ do
     },
   }
 
+  vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
   vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
   -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
@@ -287,33 +305,36 @@ do
     end
   end
 
+  -- NOTE: PackChanged event requires Neovim nightly (0.12+)
+  -- Commented out for compatibility with Neovim 0.11.0
+  --
   -- This autocommand runs after a plugin is installed or updated and
   --  runs the appropriate build command for that plugin if necessary.
   --
   -- See `:help vim.pack-events`
-  vim.api.nvim_create_autocmd('PackChanged', {
-    callback = function(ev)
-      local name = ev.data.spec.name
-      local kind = ev.data.kind
-      if kind ~= 'install' and kind ~= 'update' then return end
-
-      if name == 'telescope-fzf-native.nvim' and vim.fn.executable 'make' == 1 then
-        run_build(name, { 'make' }, ev.data.path)
-        return
-      end
-
-      if name == 'LuaSnip' then
-        if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
-        return
-      end
-
-      if name == 'nvim-treesitter' then
-        if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
-        vim.cmd 'TSUpdate'
-        return
-      end
-    end,
-  })
+  -- vim.api.nvim_create_autocmd('PackChanged', {
+  --   callback = function(ev)
+  --     local name = ev.data.spec.name
+  --     local kind = ev.data.kind
+  --     if kind ~= 'install' and kind ~= 'update' then return end
+  --
+  --     if name == 'telescope-fzf-native.nvim' and vim.fn.executable 'make' == 1 then
+  --       run_build(name, { 'make' }, ev.data.path)
+  --       return
+  --     end
+  --
+  --     if name == 'LuaSnip' then
+  --       if vim.fn.has 'win32' ~= 1 and vim.fn.executable 'make' == 1 then run_build(name, { 'make', 'install_jsregexp' }, ev.data.path) end
+  --       return
+  --     end
+  --
+  --     if name == 'nvim-treesitter' then
+  --       if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
+  --       vim.cmd 'TSUpdate'
+  --       return
+  --     end
+  --   end,
+  -- })
 end
 
 ---Because most plugins are hosted on GitHub, you can use the helper
@@ -497,6 +518,22 @@ do
     --   },
     -- },
     -- pickers = {}
+    defaults = {
+      vimgrep_arguments = {
+        'rg',
+        '--color=never',
+        '--no-heading',
+        '--with-filename',
+        '--line-number',
+        '--column',
+        '--smart-case',
+        '--glob',
+        '!seed_data',
+      },
+      layout_strategy = 'vertical',
+      layout_config = { height = 0.95 },
+      path_display = { 'filename_first' },
+    },
     extensions = {
       ['ui-select'] = { require('telescope.themes').get_dropdown() },
     },
@@ -521,7 +558,10 @@ do
   vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
   vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
   vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
-  vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+  vim.keymap.set('n', '<leader><leader>', function()
+    builtin.buffers { sort_mru = true }
+  end, { desc = '[ ] Find existing buffers' })
+  vim.keymap.set('n', '<leader>gd', builtin.git_status, { desc = 'Git status' })
 
   -- Add Telescope-based LSP pickers when an LSP attaches to a buffer.
   -- If you later switch picker plugins, this is where to update these mappings.
@@ -693,7 +733,7 @@ do
   ---@type table<string, vim.lsp.Config>
   local servers = {
     -- clangd = {},
-    -- gopls = {},
+    gopls = {},
     -- pyright = {},
     -- rust_analyzer = {},
     --
@@ -701,7 +741,18 @@ do
     --    https://github.com/pmizio/typescript-tools.nvim
     --
     -- But for many setups, the LSP (`ts_ls`) will work just fine
-    -- ts_ls = {},
+    ts_ls = {
+      settings = {
+        typescript = {
+          tsserver = {
+            maxTsServerMemory = 8192,
+          },
+          preferences = {
+            importModuleSpecifier = 'relative',
+          },
+        },
+      },
+    },
 
     stylua = {}, -- Used to format Lua code
 
@@ -780,15 +831,15 @@ do
   require('conform').setup {
     notify_on_error = false,
     format_on_save = function(bufnr)
-      -- You can specify filetypes to autoformat on save here:
-      local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
-      }
-      if enabled_filetypes[vim.bo[bufnr].filetype] then
-        return { timeout_ms = 500 }
-      else
+      -- Disable format_on_save for languages that don't have a well standardized coding style
+      local disable_filetypes = { c = true, cpp = true }
+      if disable_filetypes[vim.bo[bufnr].filetype] then
         return nil
+      else
+        return {
+          timeout_ms = 500,
+          lsp_format = 'fallback',
+        }
       end
     end,
     default_format_opts = {
@@ -796,12 +847,13 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
+      lua = { 'stylua' },
+      javascript = { 'prettierd', 'prettier', stop_after_first = true },
+      typescript = { 'prettierd', 'prettier', stop_after_first = true },
+      typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+      html = { 'superhtml' },
       -- rust = { 'rustfmt' },
-      -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
-      --
-      -- You can use 'stop_after_first' to run the first available formatter from the list
-      -- javascript = { "prettierd", "prettier", stop_after_first = true },
     },
   }
 
@@ -867,11 +919,14 @@ do
     completion = {
       -- By default, you may press `<c-space>` to show the documentation.
       -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      documentation = { auto_show = true, auto_show_delay_ms = 500 },
     },
 
     sources = {
-      default = { 'lsp', 'path', 'snippets' },
+      default = { 'lsp', 'path', 'snippets', 'lazydev' },
+      providers = {
+        lazydev = { name = 'LazyDev', module = 'lazydev.integrations.blink', score_offset = 100 },
+      },
     },
 
     snippets = { preset = 'luasnip' },
