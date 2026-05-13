@@ -44,19 +44,21 @@ Custom Telescope pickers and keymaps:
   require('custom.telescope-keymaps').setup()
 ```
 
-### `lua/custom/plugins/init.lua`
-Custom plugins. **NOTE**: This file still uses lazy.nvim format from the old setup.
+### `lua/custom/plugins.lua`
+Custom plugins converted to vim.pack format:
+- tpope plugins (speeddating, sensible, unimpaired, rsi)
+- Colorschemes (kanagawa, nightfox, catppuccin)
+- oil.nvim - file explorer (mapped to `-`)
+- yanky.nvim - enhanced yank/paste ring
+- bufjump.nvim - better buffer jump list
+- codecompanion.nvim - AI assistant with Ollama
 
-**Migration needed**: Convert to vim.pack format or keep lazy.nvim for custom plugins only.
+**Integration**: Already loaded at the end of init.lua:
+```lua
+require('custom.plugins').setup()
+```
 
-**Option A** - Convert to vim.pack (recommended):
-- Extract plugin URLs and configs
-- Add `vim.pack.add { gh 'author/plugin' }` calls in init.lua
-- Call `require('plugin').setup {}` after
-
-**Option B** - Keep lazy.nvim for custom plugins:
-- Install lazy.nvim in init.lua
-- Keep lua/custom/plugins/init.lua as-is
+**Old lazy.nvim file**: Backed up to `lua/custom/plugins/init.lua.lazy-backup`
 
 ## Core File Modifications
 
@@ -112,11 +114,15 @@ map('n', '<leader>htD', gs.toggle_deleted, { desc = '[T]oggle git show [D]eleted
 ~/.config/nvim/
 ├── init.lua                              # Main config (vim.pack, with custom requires)
 ├── lua/
-│   └── custom/                           # ✅ Your customizations
-│       ├── options.lua                   # Custom options and keymaps
-│       ├── telescope-keymaps.lua         # Custom telescope pickers
+│   ├── custom/                           # ✅ Your customizations
+│   │   ├── options.lua                   # Custom options and keymaps
+│   │   ├── telescope-keymaps.lua         # Custom telescope pickers
+│   │   ├── plugins.lua                   # Custom plugins (vim.pack format)
+│   │   └── plugins/
+│   │       └── init.lua.lazy-backup      # Old lazy.nvim file (backup)
+│   └── kickstart/
 │       └── plugins/
-│           └── init.lua                  # ⚠️  Old lazy.nvim format - needs migration
+│           └── gitsigns.lua              # Modified with toggle_deleted
 ├── CUSTOMIZATIONS.md                     # This file
 └── .git/
 ```
