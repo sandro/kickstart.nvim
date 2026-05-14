@@ -68,6 +68,10 @@ function M.setup()
       },
     },
   }
+
+  -- Telescope-frecency - sort files by frequency + recency
+  vim.pack.add { gh 'nvim-telescope/telescope-frecency.nvim' }
+  require('telescope').load_extension 'frecency'
 end
 
 return M
