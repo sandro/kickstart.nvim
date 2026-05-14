@@ -904,6 +904,10 @@ do
   -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
   -- require('luasnip.loaders.from_vscode').lazy_load()
 
+  -- [[ Lazydev ]] - Better Lua completions for Neovim API
+  vim.pack.add { gh 'folke/lazydev.nvim' }
+  require('lazydev').setup {}
+
   -- [[ Autocomplete Engine ]]
   vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
   require('blink.cmp').setup {
